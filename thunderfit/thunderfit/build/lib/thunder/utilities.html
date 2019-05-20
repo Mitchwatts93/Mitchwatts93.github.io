@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html;charset=utf-8">
+  <title>utilities.py</title>
+  <link rel="stylesheet" href="../../../../pycco.css">
+</head>
+<body>
+<div id='container'>
+  <div id="background"></div>
+  <div class='section'>
+    <div class='docs'><h1>utilities.py</h1></div>
+  </div>
+  <div class='clearall'>
+  <div class='section' id='section-0'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-0'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="kn">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">scipy.signal</span> <span class="kn">import</span> <span class="n">savgol_filter</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="n">LOGGER</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+<span class="n">LOGGER</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-1'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-1'>#</a>
+      </div>
+      <pre><code>Popular rolling circle filter (RCF) routine as described by James et al.: https://doi.org/10.1366%2F12-06766
+:param A: np matrix of data
+:param r: radius of circle to filter with
+:return: L, a numpy array of length len(A) which is the locus of the RCF
+</code></pre>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="k">def</span> <span class="nf">rcf</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">rad</span><span class="p">):</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-2'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-2'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">frame</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">series</span><span class="o">.</span><span class="n">Series</span><span class="p">):</span>
+        <span class="n">A</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">values</span> <span class="c1"># convert to numpy array</span>
+    <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Incorrect format passed for A&quot;</span><span class="p">)</span>
+
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">rad</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">abs</span><span class="p">(</span><span class="n">rad</span><span class="p">)</span> <span class="o">==</span> <span class="n">rad</span><span class="p">,</span> <span class="s2">&quot;rad needs to be a positive integer&quot;</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">A</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;A needs to be a single column&quot;</span>
+
+    <span class="n">RC</span> <span class="o">=</span> <span class="n">semi_circle_array</span><span class="p">(</span><span class="n">rad</span><span class="p">)</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">A</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">RC</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">n</span><span class="p">:</span>
+        <span class="k">print</span><span class="p">(</span><span class="s1">&#39;something has gone wrong&#39;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;The data has less points than the selected radius!&quot;</span><span class="p">)</span>
+
+    <span class="n">A_sub</span><span class="p">,</span> <span class="n">RC_sub</span> <span class="o">=</span> <span class="n">generate_sub_matrices</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">rad</span><span class="p">,</span> <span class="n">RC</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+
+    <span class="n">D</span> <span class="o">=</span> <span class="n">generate_diff_matrix</span><span class="p">(</span><span class="n">A_sub</span><span class="p">,</span> <span class="n">RC_sub</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">D</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-3'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-3'>#</a>
+      </div>
+      <p>Generate an array of length 2r+1 with values corresponding to points on a semi circle</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="k">def</span> <span class="nf">semi_circle_array</span><span class="p">(</span><span class="n">rad</span><span class="p">):</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-4'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-4'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>    <span class="n">RC</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">rad</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="p">(</span><span class="n">i</span> <span class="o">-</span> <span class="n">rad</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">rad</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)])</span>
+    <span class="k">return</span> <span class="n">RC</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-5'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-5'>#</a>
+      </div>
+      <pre><code>Generate the sub matrices used in RCF routine
+:param A: Data matrix, length n
+:param rad: radius of RCF filter
+:param RC: np array of length 2r+1 with
+:param n:
+:return: A_sub, RC_sub, lists of same dimensions, sampled according to paper: https://doi.org/10.1366%2F12-06766
+</code></pre>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="k">def</span> <span class="nf">generate_sub_matrices</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">rad</span><span class="p">,</span> <span class="n">RC</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-6'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-6'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>    <span class="n">ni</span> <span class="o">=</span> <span class="n">n</span>
+    <span class="n">A_sub</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">RC_sub</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">A</span><span class="p">)):</span> <span class="c1"># vectorise this when you can be bothered</span>
+        <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="p">(</span><span class="n">rad</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">a_sub</span> <span class="o">=</span> <span class="n">A</span><span class="p">[:(</span><span class="n">i</span> <span class="o">+</span> <span class="n">rad</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)]</span>
+            <span class="n">rc_sub</span> <span class="o">=</span> <span class="n">RC</span><span class="p">[(</span><span class="n">rad</span> <span class="o">-</span> <span class="n">i</span><span class="p">):(</span><span class="mi">2</span><span class="o">*</span><span class="n">rad</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)]</span>
+            <span class="n">A_sub</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">a_sub</span><span class="p">)</span>
+            <span class="n">RC_sub</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">rc_sub</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="p">(</span><span class="n">rad</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">i</span> <span class="o">&lt;=</span> <span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="p">(</span><span class="n">rad</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)):</span>
+            <span class="n">a_sub</span> <span class="o">=</span> <span class="n">A</span><span class="p">[(</span><span class="n">i</span> <span class="o">-</span> <span class="n">rad</span><span class="p">):(</span><span class="n">i</span> <span class="o">+</span> <span class="n">rad</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)]</span>
+            <span class="n">rc_sub</span> <span class="o">=</span> <span class="n">RC</span>
+            <span class="n">A_sub</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">a_sub</span><span class="p">)</span>
+            <span class="n">RC_sub</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">rc_sub</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">i</span> <span class="o">&gt;</span> <span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="p">(</span><span class="n">rad</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)):</span>
+            <span class="n">a_sub</span> <span class="o">=</span> <span class="n">A</span><span class="p">[(</span><span class="n">i</span> <span class="o">-</span> <span class="n">rad</span><span class="p">):(</span><span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)]</span>
+            <span class="n">rc_sub</span> <span class="o">=</span> <span class="n">RC</span><span class="p">[:(</span><span class="n">rad</span> <span class="o">+</span> <span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="n">i</span><span class="p">))]</span>
+            <span class="n">A_sub</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">a_sub</span><span class="p">)</span>
+            <span class="n">RC_sub</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">rc_sub</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">print</span><span class="p">(</span><span class="s1">&#39;something has gone wrong&#39;</span><span class="p">)</span>
+            <span class="kn">import</span> <span class="nn">ipdb</span>
+            <span class="n">ipdb</span><span class="o">.</span><span class="n">set_trace</span><span class="p">()</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Something has gone wrong and I don&#39;t know why&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">A_sub</span><span class="p">,</span> <span class="n">RC_sub</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-7'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-7'>#</a>
+      </div>
+      <pre><code>Generate a difference matrix, which will be len(A_sub)=len(RC_sub). Each element will be the minimum of matrix
+formed by the difference of AC_sub_i and RC_sub_i at each i (element).
+:param A_sub: List of np arrays
+:param RC_sub: List of np arrays
+:return: D, Difference matrix of shape (len(A_sub),), elements as described above
+</code></pre>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="k">def</span> <span class="nf">generate_diff_matrix</span><span class="p">(</span><span class="n">A_sub</span><span class="p">,</span> <span class="n">RC_sub</span><span class="p">):</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-8'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-8'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>    <span class="n">D</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">A_sub</span><span class="p">)):</span>
+        <span class="n">diff</span> <span class="o">=</span> <span class="n">A_sub</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">RC_sub</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">D</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">diff</span><span class="p">))</span>
+
+    <span class="n">D</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">D</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">D</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-9'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-9'>#</a>
+      </div>
+      <pre><code>Savgol filter applied to data
+:param L: the data to be smoothed
+:param window_length: positive odd integer
+:param polyorder: must be less than window length
+:return:
+</code></pre>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="k">def</span> <span class="nf">smooth</span><span class="p">(</span><span class="n">L</span><span class="p">,</span> <span class="n">window_length</span><span class="p">,</span> <span class="n">polyorder</span><span class="p">):</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-10'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-10'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>    <span class="k">return</span> <span class="n">savgol_filter</span><span class="p">(</span><span class="n">L</span><span class="p">,</span> <span class="n">window_length</span><span class="p">,</span> <span class="n">polyorder</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;mirror&#39;</span><span class="p">)</span>
+
+</pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+</div>
+</body>

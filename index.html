@@ -93,7 +93,6 @@ http://www.tooplate.com/view/2086-multi-color
                                             <figcaption>
                                                 <h2 class="tm-figure-title"> <span></span></h2>
                                                 <p class="tm-figure-description">Maecenas purus sem, lobortis id odio in sapien.</p>
-                                                <a href="img/tm-img-02.jpg">View more</a>
                                             </figcaption>
                                         </figure>
                                     </div>
@@ -104,7 +103,6 @@ http://www.tooplate.com/view/2086-multi-color
                                             <figcaption>
                                                 <h2 class="tm-figure-title"> <span></span></h2>
                                                 <p class="tm-figure-description">Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
-                                                <a href="img/tm-img-03.jpg">View more</a>
                                             </figcaption>           
                                         </figure>
                                     </div>
@@ -115,7 +113,6 @@ http://www.tooplate.com/view/2086-multi-color
                                             <figcaption>
                                                 <h2 class="tm-figure-title"> <span></span></h2>
                                                 <p class="tm-figure-description">Maecenas purus sem, lobortis id odio in sapien.</p>
-                                                <a href="img/tm-img-04.jpg">View more</a>
                                             </figcaption>           
                                         </figure>
                                     </div>  
@@ -223,45 +220,6 @@ http://www.tooplate.com/view/2086-multi-color
                 // Remove preloader (https://ihatetomatoes.net/create-custom-preloading-screen/)
                 $('body').addClass('loaded');
                            
-            });
-
-            /* Google map
-            ------------------------------------------------*/
-            var map = '';
-            var center;
-
-            function initialize() {
-                var mapOptions = {
-                    zoom: 14,
-                    center: new google.maps.LatLng(37.769725, -122.462154),
-                    scrollwheel: false
-                };
-            
-                map = new google.maps.Map(document.getElementById('google-map'),  mapOptions);
-
-                google.maps.event.addDomListener(map, 'idle', function() {
-                  calculateCenter();
-                });
-            
-                google.maps.event.addDomListener(window, 'resize', function() {
-                  map.setCenter(center);
-                });
-            }
-
-            function calculateCenter() {
-                center = map.getCenter();
-            }
-
-            function loadGoogleMap(){
-                var script = document.createElement('script');
-                script.type = 'text/javascript';
-                script.src = 'https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false&' + 'callback=initialize';
-                document.body.appendChild(script);
-            }
-        
-            // DOM is ready
-            $(function() {                
-                loadGoogleMap(); // Google Map
             });
 
         </script>            
